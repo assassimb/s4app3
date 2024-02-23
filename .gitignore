@@ -1,4 +1,9 @@
 vivado.jou
 vivado.log
 *.wpc
-project.wpc
+*.log
+*.wdf
+*.bat
+*.ini
+*.xml
+*.pb
