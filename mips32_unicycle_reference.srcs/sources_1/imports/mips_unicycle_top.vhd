@@ -35,14 +35,18 @@ Port (
     i_Op        : in std_logic_vector(5 downto 0);
     i_funct_field : in std_logic_vector (5 downto 0);
     
-    o_RegDst    : out std_logic;
-    o_Branch    : out std_logic;
-    o_MemtoReg  : out std_logic;
-    o_AluFunct  : out std_logic_vector (3 downto 0);
-    o_MemRead   : out std_logic;
-    o_MemWrite  : out std_logic;
-    o_ALUSrc    : out std_logic;
-    o_RegWrite  : out std_logic;
+    o_RegDst        : out std_logic;
+    o_Branch        : out std_logic;
+    o_MemtoReg      : out std_logic;
+    o_AluFunct      : out std_logic_vector (3 downto 0);
+    o_MemRead       : out std_logic;
+    o_MemReadWide   : out std_logic;
+    o_MemWrite      : out std_logic;
+    o_MemWriteWide  : out std_logic;
+    o_ALUSrc        : out std_logic;
+    o_RegWrite      : out std_logic_vector (3 downto 0);
+    o_movzv         : out std_logic;
+    o_movnv         : out std_logic;
 	
 	-- Sorties supp. vs 4.17
     o_Jump : out std_logic;
@@ -61,13 +65,18 @@ Port (
 	reset 			: in std_logic;
 
 	i_alu_funct   	: in std_logic_vector(3 downto 0);
-	i_RegWrite    	: in std_logic;
+	i_RegWrite    	: in std_logic_vector(3 downto 0);
 	i_RegDst      	: in std_logic;
 	i_MemtoReg    	: in std_logic;
 	i_branch      	: in std_logic;
 	i_ALUSrc      	: in std_logic;
 	i_MemRead 		: in std_logic;
+    i_MemReadWide   : in std_logic;
 	i_MemWrite	  	: in std_logic;
+    i_MemWriteWide  : in std_logic;
+    
+    i_movzv         : in std_ulogic;
+    i_movnv         : in std_ulogic;  
 
 	i_jump   	  	: in std_logic;
 	i_jump_register : in std_logic;
@@ -83,13 +92,15 @@ Port (
 end component;
 
     signal s_alu_funct      : std_logic_vector(3 downto 0);
-    signal s_RegWrite       : std_logic;
+    signal s_RegWrite       : std_logic_vector(3 downto 0);
 	signal s_RegDst         : std_logic;
     signal s_MemtoReg       : std_logic;
 	signal s_branch         : std_logic;
     signal s_ALUSrc         : std_logic;
 	signal s_MemRead	    : std_logic;
+	signal s_MemReadWide    : std_logic;
 	signal s_MemWrite	    : std_logic;
+	signal s_MemWriteWide   : std_logic;
 	signal s_jump_register  : std_logic;
 	signal s_jump_link      : std_logic;
     signal s_jump           : std_logic;
@@ -97,7 +108,9 @@ end component;
 	signal s_alu_mult       : std_logic;
 	signal s_mflo           : std_logic;
 	signal s_mfhi           : std_logic;
-
+	
+	signal s_movzv          : std_logic;
+	signal s_movnv          : std_logic;
 	
     signal s_Instruction    : std_logic_vector(31 downto 0);
     -- champs du registre d'instructions
@@ -117,9 +130,13 @@ Port map(
     o_MemtoReg  	=> s_MemtoReg,
     o_AluFunct  	=> s_alu_funct,
     o_MemRead  		=> s_MemRead,
+    o_MemReadWide  	=> s_MemReadWide,
     o_MemWrite  	=> s_MemWrite,
+    o_MemWriteWide  => s_MemWriteWide,
     o_ALUSrc    	=> s_ALUSrc,
     o_RegWrite  	=> s_RegWrite,
+    o_movzv         => s_movzv,
+    o_movnv         => s_movnv,
 	
     o_Jump 			=> s_Jump,
 	o_jump_register => s_jump_register,
@@ -144,7 +161,11 @@ Port map(
 	i_branch      	=> s_branch,
 	i_ALUSrc      	=> s_ALUSrc,
 	i_MemRead 		=> s_MemRead,
+	i_MemReadWide	=> s_MemReadWide,
 	i_MemWrite	  	=> s_MemWrite,
+	i_MemWriteWide	=> s_MemWriteWide,
+	i_movzv         => s_movzv,
+	i_movnv         => s_movnv,
 	i_jump   	  	=> s_jump,
 	i_jump_register => s_jump_register,
 	i_jump_link   	=> s_jump_link,

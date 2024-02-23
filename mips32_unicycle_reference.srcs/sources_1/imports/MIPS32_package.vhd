@@ -1,12 +1,12 @@
 ---------------------------------------------------------------------------------------------
 --
---	Université de Sherbrooke 
+--	Universit? de Sherbrooke 
 --  Département de génie électrique et génie informatique
 --
 --	S4i - APP4 
 --	
 --
---	Auteur: 		Marc-André Tétrault
+--	Auteur: 		Marc-Andr? Tétrault
 --					Daniel Dalle
 --					Sébastien Roy
 -- 
@@ -66,7 +66,9 @@ package MIPS32_package is
     constant OP_ORI   : std_logic_vector( 5 downto 0 ) := "001101";
     constant OP_LUI   : std_logic_vector( 5 downto 0 ) := "001111";
     constant OP_LW    : std_logic_vector( 5 downto 0 ) := "100011";
+    constant OP_LWV    : std_logic_vector( 5 downto 0 ) := "010100";
     constant OP_SW    : std_logic_vector( 5 downto 0 ) := "101011";
+    constant OP_SWV    : std_logic_vector( 5 downto 0 ) := "010101";
 	
 	
 	constant c_Mips32_Nop	 	: std_logic_vector(31 downto 0) := X"00000000";
@@ -103,7 +105,9 @@ package MIPS32_package is
         sim_OP_ORI,
         sim_OP_LUI,
 		sim_OP_LW,
+		sim_OP_LWV,
 		sim_OP_SW,
+		sim_OP_SWV,
 		sim_OP_SYSCALL,
         sim_OP_Undefined
     );
@@ -205,8 +209,12 @@ begin
 			CurrentOp := sim_OP_ORI;
 		when OP_LW =>
 			CurrentOp := sim_OP_LW;
+        when OP_LWV =>
+            CurrentOp := sim_OP_LWV;
 		when OP_SW =>
 			CurrentOp := sim_OP_SW;
+        when OP_SWV =>
+			CurrentOp := sim_OP_SWV;
 		when others =>
 			CurrentOp := sim_OP_Undefined;
 	end case;

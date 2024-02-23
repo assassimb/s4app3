@@ -1,12 +1,12 @@
 ---------------------------------------------------------------------------------------------
 --
---	Université de Sherbrooke 
+--	Universit? de Sherbrooke 
 --  Département de génie électrique et génie informatique
 --
 --	S4i - APP4 
 --	
 --
---	Auteur: 		Marc-André Tétrault
+--	Auteur: 		Marc-Andr? Tétrault
 --					Daniel Dalle
 --					Sébastien Roy
 -- 
@@ -35,6 +35,7 @@ architecture comport of alu is
     signal s_result 		: std_logic_vector (31 downto 0);
     signal s_multRes 		: std_logic_vector (63 downto 0);
     signal s_unsupported    : std_logic;
+   
 	
 begin
     -- conversion de type

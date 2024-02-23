@@ -1,12 +1,12 @@
 ---------------------------------------------------------------------------------------------
 --
---	Université de Sherbrooke 
+--	Universit? de Sherbrooke 
 --  Département de génie électrique et génie informatique
 --
 --	S4i - APP4 
 --	
 --
---	Auteur: 		Marc-André Tétrault
+--	Auteur: 		Marc-Andr? Tétrault
 --					Daniel Dalle
 --					Sébastien Roy
 -- 
@@ -27,9 +27,13 @@ Port (
     o_MemtoReg  	: out std_logic;
     o_AluFunct  	: out std_logic_vector (3 downto 0);
     o_MemRead   	: out std_logic;
+    o_MemReadWide   : out std_logic;
     o_MemWrite  	: out std_logic;
+    o_MemWriteWide  : out std_logic;
     o_ALUSrc    	: out std_logic;
-    o_RegWrite  	: out std_logic;
+    o_RegWrite  	: out std_logic_vector(3 downto 0);
+    o_movzv         : out std_logic;
+    o_movnv         : out std_logic;
 	
 	-- Sorties supp. vs 4.17
     o_Jump 			: out std_logic;
@@ -69,9 +73,9 @@ begin
 				o_AluFunct <= ALU_SUB;
 			when OP_JAL =>
 				o_AluFunct <= ALU_NULL;
-			when OP_SW => 
+			when OP_SWV => 
 				o_AluFunct <= ALU_ADD;
-			when OP_LW => 
+			when OP_LWV => 
 				o_AluFunct <= ALU_ADD;
             -- when OP_??? =>   -- autres cas?
 			-- sinon
@@ -80,7 +84,7 @@ begin
         end case;
     end process; 
     
-    -- Commande à l'ALU pour les instructions "R"
+    -- Commande ? l'ALU pour les instructions "R"
     process(i_funct_field)
     begin
         case i_funct_field is
@@ -110,21 +114,26 @@ begin
                 s_R_funct_decode <= ALU_NULL; 
             when ALUF_MFLO => 
                 s_R_funct_decode <= ALU_NULL; 
-            -- à compléter au besoin avec d'autres instructions
+            -- ? compléter au besoin avec d'autres instructions
             when others =>
                 s_R_funct_decode <= ALU_NULL;
          end case;
      end process;
 	
 	
-	o_RegWrite		<= '1' when i_Op = OP_Rtype or 
+	o_RegWrite(0)	<= '1' when i_Op = OP_Rtype or 
 								i_Op = OP_ADDI or 
 								i_Op = OP_ADDIU or 
 								i_Op = OP_ORI or 
 								i_Op = OP_LUI or 
-								i_Op = OP_LW or 
+								i_Op = OP_LW or
+								i_Op = OP_LWV or 
 								i_Op = OP_JAL
 						else '0';
+    o_RegWrite(3 downto 1)  <= "111" when i_Op = OP_LWV --or
+                                --i_funct_field = ALUF_ADDV or
+                                ---i_funct_field = ALUF_SLTV
+                            else (others => '0');
 	
 	o_RegDst 		<= '1' when i_Op = OP_Rtype else '0';
 	
@@ -133,8 +142,10 @@ begin
 						else '1';
 	o_Branch 		<= '1' when i_Op = OP_BEQ   else '0';
 	o_MemRead 		<= '1' when i_Op = OP_LW else '0';
+	o_MemReadWide 	<= '1' when i_Op = OP_LWV else '0';
 	o_MemWrite 		<= '1' when i_Op = OP_SW else '0';
-	o_MemtoReg 		<= '1' when i_Op = OP_LW else '0';
+	o_MemWriteWide	<= '1' when i_Op = OP_SWV else '0';
+	o_MemtoReg 		<= '1' when i_Op = OP_LW  or i_OP = OP_LWV else '0';
 	o_SignExtend	<= '1' when i_OP = OP_ADDI or
 	                           i_OP = OP_BEQ 
 	                     else '0';

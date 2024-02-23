@@ -1,12 +1,12 @@
 ---------------------------------------------------------------------------------------------
 --
---	Université de Sherbrooke 
+--	Universit? de Sherbrooke 
 --  Département de génie électrique et génie informatique
 --
 --	S4i - APP4 
 --	
 --
---	Auteur: 		Marc-André Tétrault
+--	Auteur: 		Marc-Andr? Tétrault
 --					Daniel Dalle
 --					Sébastien Roy
 -- 
@@ -60,6 +60,26 @@ X"ac220000",
 X"2002000a",
 X"0000000c",
 
+
+-- Test pour LWV
+--X"20080001",
+--X"20090002",
+--X"200a0003",
+--X"200b0004",
+--X"3c011001",
+--X"342c0000",
+--X"ad880000",
+--X"ad890004",
+--X"ad8a0008",
+--X"ad8b000c",
+--X"51900000",
+--X"20100043",
+--X"20110003",
+--X"20120038",
+--X"20130022",
+--X"51900000",
+--X"2402000a",
+--X"0000000c",
 
 ------------------------
 -- Fin de votre code

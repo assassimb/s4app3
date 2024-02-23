@@ -1,12 +1,12 @@
 ---------------------------------------------------------------------------------------------
 --
---	Université de Sherbrooke 
+--	Universit? de Sherbrooke 
 --  Département de génie électrique et génie informatique
 --
 --	S4i - APP4 
 --	
 --
---	Auteurs: 		Marc-André Tétrault
+--	Auteurs: 		Marc-Andr? Tétrault
 --					Daniel Dalle
 --					Sébastien Roy
 -- 
@@ -25,13 +25,18 @@ Port (
 	reset 			: in std_logic;
 
 	i_alu_funct   	: in std_logic_vector(3 downto 0);
-	i_RegWrite    	: in std_logic;
+	i_RegWrite    	: in std_logic_vector(3 downto 0);
 	i_RegDst      	: in std_logic;
 	i_MemtoReg    	: in std_logic;
 	i_branch      	: in std_logic;
 	i_ALUSrc      	: in std_logic;
 	i_MemRead 		: in std_logic;
+	i_MemReadWrite  : in std_logic;
 	i_MemWrite	  	: in std_logic;
+	i_MemWriteWide  : in std_logic;
+
+    i_movzv         : in std_logic;
+    i_movnv         : in std_logic;    
 
 	i_jump   	  	: in std_logic;
 	i_jump_register : in std_logic;
@@ -54,16 +59,34 @@ component MemInstructions is
            o_instruction : out std_logic_vector (31 downto 0));
 end component;
 
-component MemDonnees is
-Port ( 
+--component MemDonnees is
+--Port ( 
+--	clk : in std_logic;
+--	reset : in std_logic;
+--	i_MemRead 	: in std_logic;
+--	i_MemWrite : in std_logic;
+--    i_Addresse : in std_logic_vector (31 downto 0);
+--	i_WriteData : in std_logic_vector (31 downto 0);
+--    o_ReadData : out std_logic_vector (31 downto 0)
+--);
+--end component;
+
+component MemDonneesWide is
+Port (
 	clk : in std_logic;
 	reset : in std_logic;
 	i_MemRead 	: in std_logic;
 	i_MemWrite : in std_logic;
     i_Addresse : in std_logic_vector (31 downto 0);
 	i_WriteData : in std_logic_vector (31 downto 0);
-    o_ReadData : out std_logic_vector (31 downto 0)
-);
+    o_ReadData : out std_logic_vector (31 downto 0);
+    
+    -- partie wide
+    i_MemReadWide : in std_ulogic;
+    i_MemWriteWide: in std_ulogic;
+    i_WriteDataWide: in std_ulogic_vector (127 downto 0);
+    o_ReadDataWide: in std_ulogic_vector (127 downto 0)
+); 
 end component;
 
 	component BancRegistres is
@@ -73,10 +96,13 @@ end component;
 		i_RS1 : in std_logic_vector (4 downto 0);
 		i_RS2 : in std_logic_vector (4 downto 0);
 		i_Wr_DAT : in std_logic_vector (31 downto 0);
+		i_Wr_DATWIDE : in std_ulogic_vector (127 downto 0);
 		i_WDest : in std_logic_vector (4 downto 0);
 		i_WE : in std_logic;
 		o_RS1_DAT : out std_logic_vector (31 downto 0);
-		o_RS2_DAT : out std_logic_vector (31 downto 0)
+		o_RS1_DATWIDE : out std_ulogic_vector (127 downto 0);
+		o_RS2_DAT : out std_logic_vector (31 downto 0);
+		o_RS2_DATWIDE : out std_ulogic_vector (127 downto 0)
 		);
 	end component;
 
@@ -93,7 +119,8 @@ end component;
 	end component;
 
 	constant c_Registre31		 : std_logic_vector(4 downto 0) := "11111";
-	signal s_zero        : std_logic;
+	--signal s_zero        : std_logic;
+	signal s_zero: std_logic_vector (3 downto 0);
 	
     signal s_WriteRegDest_muxout: std_logic_vector(4 downto 0);
 	
@@ -131,6 +158,18 @@ end component;
     signal r_HI             : std_logic_vector(31 downto 0);
     signal r_LO             : std_logic_vector(31 downto 0);
 	
+	-- swv et lwv
+	signal s_WideDataRegToMem : std_logic_vector (127 downto 0);
+	signal s_WideDataMemory : std_logic_vector (127 downto 0);
+	
+	-- addv
+	signal s_reg_data1_Wide: std_logic_vector (127 downto 0);
+	signal s_WideAluResult: std_logic_vector (127 downto 0);
+	signal s_WideWriteData: std_logic_vector (127 downto 0);
+	
+	-- movzv
+	signal s_data1_mux_out: std_logic_vector (127 downto 0);
+	signal s_WriteEnable: std_logic_vector (3 downto 0);
 
 begin
 
@@ -151,7 +190,7 @@ s_jump_field	<= s_Instruction(25 downto  0);
 
 
 ------------------------------------------------------------------------
--- Compteur de programme et mise à jour de valeur
+-- Compteur de programme et mise ? jour de valeur
 ------------------------------------------------------------------------
 process(clk)
 begin
@@ -172,7 +211,7 @@ s_adresse_branche				<= std_logic_vector(unsigned(s_imm_extended_shifted) + unsi
 -- note, "i_jump_register" n'est pas dans les figures de COD5
 s_PC_Suivant		<= s_adresse_jump when i_jump = '1' else
                        s_reg_data1 when i_jump_register = '1' else
-					   s_adresse_branche when (i_branch = '1' and s_zero = '1') else
+					   s_adresse_branche when (i_branch = '1' and s_zero(0) = '1') else
 					   s_adresse_PC_plus_4;
 					   
 
@@ -196,17 +235,30 @@ s_WriteRegDest_muxout <= c_Registre31 when i_jump_link = '1' else
                          s_rt         when i_RegDst = '0' else 
 						 s_rd;
        
+-- Multiplexeur pour l'entr?e writeData 128 (LWV)
+s_WideWriteData <= s_reg_data1_Wide when i_movzv = '1' or i_movnv = '1' else
+                   s_WideAluResult when i_MemReadWide = '0' else
+                   s_WideDataMemory;
+
+-- Mux movzv vs movnv
+s_WriteEnable <= i_RegWrite or (s_zero and (i_movzv & i_movzv & i_movzv & i_movzv)) when i_movzv = '1' else
+                 i_RegWrite or (not s_zero and (i_movnv & i_movnv & i_movnv & i_movnv)) when i_movnv = '1' else
+                 i_RegWrite;
+
 inst_Registres: BancRegistres 
 port map ( 
-	clk          => clk,
-	reset        => reset,
-	i_RS1        => s_rs,
-	i_RS2        => s_rt,
-	i_Wr_DAT     => s_Data2Reg_muxout,
-	i_WDest      => s_WriteRegDest_muxout,
-	i_WE         => i_RegWrite,
-	o_RS1_DAT    => s_reg_data1,
-	o_RS2_DAT    => s_reg_data2
+	clk            => clk,
+	reset          => reset,
+	i_RS1          => s_rs,
+	i_RS2          => s_rt,
+	i_Wr_DAT       => s_Data2Reg_muxout,
+	i_Wr_DATWIDE   => s_WideWriteData,
+	i_WDest        => s_WriteRegDest_muxout,
+	i_WE           => s_WriteEnable,
+	o_RS1_DAT      => s_reg_data1,
+	o_RS1_DATWIDE  => s_reg_data1_Wide,
+	o_RS2_DAT      => s_reg_data2,
+	o_RS2_DATWIDE  => s_WideDataRegToMem
 	);
 	
 
@@ -214,38 +266,88 @@ port map (
 -- ALU (instance, extension de signe et mux d'entrée pour les immédiats)
 ------------------------------------------------------------------------
 -- extension de signe
-s_imm_extended <= std_logic_vector(resize(  signed(s_imm16),32)) when i_SignExtend = '1' else -- extension de signe à 32 bits
+s_imm_extended <= std_logic_vector(resize(  signed(s_imm16),32)) when i_SignExtend = '1' else -- extension de signe ? 32 bits
 				  std_logic_vector(resize(unsigned(s_imm16),32)); 
 
 -- Mux pour immédiats
 s_AluB_data <= s_reg_data2 when i_ALUSrc = '0' else s_imm_extended;
 
+-- Mux pour movnv et movzv
+--s_data1_mux_out <= s_reg_data1_Wide when i_movzv = '0' and i_movnv = '0'
+--                   else (others => '0');
+
 inst_Alu: alu 
 port map( 
-	i_a         => s_reg_data1,
+	i_a         =>  s_data1_mux_out(31 downto 0), -- s_reg_data1,
 	i_b         => s_AluB_data,
 	i_alu_funct => i_alu_funct,
 	i_shamt     => s_shamt,
 	o_result    => s_AluResult,
 	o_multRes   => s_AluMultResult,
-	o_zero      => s_zero
+	o_zero      => s_zero(0) 
 	);
+
+s_WideAluResult(31 downto 0) <= s_AluResult;
+
+inst_Alu2: alu
+port map(
+	i_a         =>  s_data1_mux_out(63 downto 32),
+	i_b         =>  s_WideDataRegToMem(63 downto 32),
+	i_alu_funct  =>  i_alu_funct,
+	i_shamt     =>  s_shamt,
+	o_result    =>  s_WideAluResult(63 downto 32),
+	o_zero      =>  s_zero(1)
+	);
+	
+inst_Alu3: alu
+port map(
+    i_a         =>  s_data1_mux_out(95 downto 64),
+    i_b         =>  s_WideDataRegToMem(95 downto 64),
+    i_alu_funct =>  i_alu_funct,
+    i_shamt     =>  s_shamt,
+    o_result    =>  s_WideAluResult(95 downto 64),
+    o_zero      =>  s_zero(2)
+    );
+    
+inst_Alu4: alu
+port map(
+    i_a         =>  s_data1_mux_out(127 downto 96),
+    i_b         =>  s_WideDataRegToMem(127 downto 96),
+    i_alu_funct =>  i_alu_funct,
+    i_shamt     =>  s_shamt,
+    o_result    =>  s_WideAluResult(127 downto 96),
+    o_zero      =>  s_zero(3)
+    );
 
 ------------------------------------------------------------------------
 -- Mémoire de données
 ------------------------------------------------------------------------
-inst_MemDonnees : MemDonnees
-Port map( 
-	clk 		=> clk,
-	reset 		=> reset,
-	i_MemRead	=> i_MemRead,
-	i_MemWrite	=> i_MemWrite,
-    i_Addresse	=> s_AluResult,
-	i_WriteData => s_reg_data2,
-    o_ReadData	=> s_MemoryReadData
-	);
+--inst_MemDonnees : MemDonnees
+--Port map( 
+--	clk 		=> clk,
+--	reset 		=> reset,
+--	i_MemRead	=> i_MemRead,
+--	i_MemWrite	=> i_MemWrite,
+--    i_Addresse	=> s_AluResult,
+--	i_WriteData => s_reg_data2,
+--    o_ReadData	=> s_MemoryReadData
+--	);
 	
-
+inst_MemDonneesWide : MemDonneesWide
+Port map(
+    clk             => clk,
+    reset           => reset,
+    i_MemRead       => i_MemRead,
+    i_MemWrite      => i_MemWrite,
+    i_Addresse      => s_AluResult,
+    i_WriteData     => s_reg_data2,
+    o_ReadData      => s_MemoryReadData,
+    i_MemReadWide   => i_MemReadWide,
+    i_MemWriteWide  => i_MemWriteWide,
+    i_WriteDataWide => s_WideDataRegToMem,
+    o_ReadDataWide  => s_WideDataMemory
+    );
+    
 ------------------------------------------------------------------------
 -- Mux d'écriture vers le banc de registres
 ------------------------------------------------------------------------
