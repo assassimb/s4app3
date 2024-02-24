@@ -31,7 +31,7 @@ Port (
 	i_branch      	: in std_logic;
 	i_ALUSrc      	: in std_logic;
 	i_MemRead 		: in std_logic;
-	i_MemReadWrite  : in std_logic;
+	i_MemReadWide  : in std_logic;
 	i_MemWrite	  	: in std_logic;
 	i_MemWriteWide  : in std_logic;
 
@@ -71,23 +71,23 @@ end component;
 --);
 --end component;
 
-component MemDonneesWide is
-Port (
-	clk : in std_logic;
-	reset : in std_logic;
-	i_MemRead 	: in std_logic;
-	i_MemWrite : in std_logic;
-    i_Addresse : in std_logic_vector (31 downto 0);
-	i_WriteData : in std_logic_vector (31 downto 0);
-    o_ReadData : out std_logic_vector (31 downto 0);
-    
-    -- partie wide
-    i_MemReadWide : in std_ulogic;
-    i_MemWriteWide: in std_ulogic;
-    i_WriteDataWide: in std_ulogic_vector (127 downto 0);
-    o_ReadDataWide: in std_ulogic_vector (127 downto 0)
-); 
-end component;
+    component MemDonneesWide is
+    Port (
+        clk : in std_logic;
+        reset : in std_logic;
+        i_MemRead 	: in std_logic;
+        i_MemWrite : in std_logic;
+        i_Addresse : in std_logic_vector (31 downto 0);
+        i_WriteData : in std_logic_vector (31 downto 0);
+        o_ReadData : out std_logic_vector (31 downto 0);
+        
+        -- partie wide
+        i_MemReadWide : in std_logic;
+        i_MemWriteWide: in std_logic;
+        i_WriteDataWide: in std_logic_vector (127 downto 0);
+        o_ReadDataWide: out std_logic_vector (127 downto 0)
+    ); 
+    end component;
 
 	component BancRegistres is
 	Port ( 
@@ -98,7 +98,7 @@ end component;
 		i_Wr_DAT : in std_logic_vector (31 downto 0);
 		i_Wr_DATWIDE : in std_ulogic_vector (127 downto 0);
 		i_WDest : in std_logic_vector (4 downto 0);
-		i_WE : in std_logic;
+		i_WE : in std_logic_vector(3 downto 0);
 		o_RS1_DAT : out std_logic_vector (31 downto 0);
 		o_RS1_DATWIDE : out std_ulogic_vector (127 downto 0);
 		o_RS2_DAT : out std_logic_vector (31 downto 0);

@@ -7,3 +7,5 @@ vivado.log
 *.ini
 *.xml
 *.pb
+mips32_unicycle_reference.sim/*
+mips32_unicycle_reference.cache/*
